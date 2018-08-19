@@ -21,7 +21,7 @@ export default {
 
   props: {
     /**
-     * 假设 validator 的 fields 为 ['a,b,c']，triggers 如下，最后生成的结果如下
+     * 假设 validator 的 fields 为 ['a','b','c']，triggers 如下，最后生成的结果如下
      * ['change', 'blur,input,xxx', 'submit'] => a(change), b(blur,input,xxx), c(submit)
      * ['blur']                               => a(blur), b(submit), c(submit)
      * 'blur,input'                           => a(blur,input), b(blur,input), c(blur,input)
@@ -44,8 +44,7 @@ export default {
   data () {
     return {
       fields: [],
-      errorMap: {},
-      handlers: {}
+      errorMap: {}
     }
   },
 
@@ -103,6 +102,7 @@ export default {
       // 把 field 上边 disabled 的项去掉
       let data = omit(this.data, this.fields.filter(field => field.realDisabled).map(({field}) => field))
       return new Promise(resolve =>
+        // 处理 beforeValidate 返回 Promise 的情况，通过 resolve 直接把返回值传递到下层
         isFunction(this.beforeValidate)
           ? resolve(this.beforeValidate.call(getVnodes(this)[0].context, data))
           : resolve())
@@ -114,6 +114,7 @@ export default {
         .then(res =>
           this.isValid(res)
             ? new Promise(resolve =>
+              // 处理 afterValidate 返回 Promise 的情况，通过 resolve 直接把返回值传递到下层
               isFunction(this.afterValidate)
                 ? resolve(this.afterValidate.call(getVnodes(this)[0].context, data))
                 : resolve())

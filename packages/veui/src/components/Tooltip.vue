@@ -28,8 +28,8 @@ export default {
       default: 'top'
     },
     target: {
-      validator (v) {
-        return isValidNodesResolver(v)
+      validator (val) {
+        return isValidNodesResolver(val)
       }
     },
     trigger: {
@@ -77,7 +77,10 @@ export default {
         close = trigger[1] || trigger[0]
       }
       open = TRIGGER_MAP[open] || open
-      return {open, close}
+      return {
+        open,
+        close
+      }
     },
     targetNode () {
       return getNodes(this.target, this.$vnode.context)[0]
@@ -150,7 +153,11 @@ export default {
           'veui-tooltip-box': true,
           'veui-tooltip-box-transparent': !this.interactive
         })}>
-        <div class="veui-tooltip" ui={this.ui} {...{directives}}>
+        <div
+          class="veui-tooltip"
+          ui={this.ui}
+          role="tooltip"
+          {...{directives}}>
           <div class="veui-tooltip-content">
             { this.$slots.default }
           </div>

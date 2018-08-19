@@ -10,6 +10,7 @@
       <span>每页条数</span>
       <veui-select v-model="realPageSize"
         :options="realPageSizes"
+        overlay-class="veui-pagination-select-overlay"
         :aria-label="`选择每页显示条数，目前为 ${realPageSize} 条`"
         @change="size => $emit('pagesizechange', size)">
       </veui-select>
@@ -24,7 +25,7 @@
         }"
         :key="index">
         <veui-link
-          :to="item.href"
+          :to="item.page === page ? null : item.href"
           :native="native"
           :aria-current="item.page === page ? 'page' : null"
           :aria-label="`第 ${item.page} 页${item.page === page ? '，当前页' : ''}`"
@@ -229,7 +230,9 @@ export default {
   },
   methods: {
     handleRedirect (page, event) {
-      this.$emit('redirect', {page, event})
+      if (page !== this.page) {
+        this.$emit('redirect', page, event)
+      }
     },
 
     getPageIndicator (page, isMore = false) {

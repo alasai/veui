@@ -18,9 +18,9 @@
       &-button {
         .size(@size - @gap * 2);
 
-        .veui-icon {
-          .size(@size / 3 * 2);
-        }
+        // .veui-icon {
+        //   .size(@size / 3 * 2);
+        // }
       }
 
       &-label {
@@ -28,13 +28,14 @@
       }
     }
 
-    &.veui-switch-on .veui-switch-button {
+    :checked + .veui-switch-switcher .veui-switch-button {
       transform: translateX(@size * (@aspect-ratio - 1));
     }
   }
 
   display: inline-block;
   cursor: pointer;
+  outline: none;
   .metrics();
 
   &-switcher,
@@ -51,7 +52,15 @@
     display: inline-block;
     background-color: @veui-gray-color-4;
     user-select: none;
-    transition: background-color ease .3s;
+    transition: background-color .3s, box-shadow .3s;
+  }
+
+  .focus-visible + &-switcher {
+    box-shadow: 0 0 0 2px @veui-gray-color-6;
+  }
+
+  :checked.focus-visible + &-switcher {
+    box-shadow: 0 0 0 2px @veui-brand-color-8;
   }
 
   &-button {
@@ -62,34 +71,27 @@
     border-radius: 50%;
     transition: transform ease .3s;
 
-    .veui-icon {
-      .absolute(50%, _, _, 50%);
-      transform: translate(-50%, -50%);
-    }
+    // .veui-icon {
+    //   .absolute(50%, _, _, 50%);
+    //   transform: translate(-50%, -50%);
+    // }
   }
 
-  &-on &-switcher {
+  :checked + &-switcher {
     background-color: @veui-brand-color;
   }
 
-  &-readonly {
+  &.veui-readonly {
     cursor: default;
   }
 
-  &-disabled {
+  &.veui-disabled {
     cursor: not-allowed;
   }
 
-  &-disabled &-switcher {
+  &.veui-readonly &-switcher,
+  &.veui-disabled &-switcher {
     background-color: @veui-gray-color-5;
-  }
-
-  &-on&-disabled &-switcher {
-    background-color: @veui-brand-color-8;
-  }
-
-  &-disabled &-button {
-    background-color: @veui-gray-color-4;
   }
 
   &[ui~="small"] {
@@ -101,6 +103,7 @@
   }
 
   input {
-    display: none;
+    position: absolute;
+    opacity: 0;
   }
 }

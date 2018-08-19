@@ -28,7 +28,7 @@ import Icon from './Icon'
 import input from '../mixins/input'
 import ui from '../mixins/ui'
 import { getListeners } from '../utils/helper'
-import { patchIndeterminate, focus } from '../utils/dom'
+import { patchIndeterminate } from '../utils/dom'
 
 const EVENTS = ['click', 'keyup', 'keydown', 'keypress', 'focus', 'blur']
 
@@ -106,6 +106,9 @@ export default {
   },
   methods: {
     activate () {
+      if (this.realDisabled || this.realReadonly) {
+        return
+      }
       this.toggleChecked()
     },
     handleChange () {
@@ -120,12 +123,8 @@ export default {
     toggleChecked () {
       this.localChecked = !this.localChecked
     },
-    focus ({ visible = false }) {
-      if (visible) {
-        focus(this.$refs.box)
-      } else {
-        this.$refs.box.focus()
-      }
+    focus () {
+      this.$refs.box.focus()
     }
   },
   mounted () {

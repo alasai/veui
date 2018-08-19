@@ -6,21 +6,25 @@
         Progress <input type="number" step="0.01" min="0" :max="1" v-model="progress">
       </p>
       <p>
-        <veui-button @click="state = 'alert'">Trigger Error</veui-button>
-        <veui-button @click="state = null">Clear Error</veui-button>
+        <veui-button @click="status = 'alert'">Trigger Error</veui-button>
+        <veui-button @click="status = null">Clear Status</veui-button>
       </p>
     </section>
     <section>
       <h2>线性进度条</h2>
-      <veui-progress :value="Number(progress)" desc :auto-succeed="200" :state.sync="state" :precision="1"></veui-progress>
+      <veui-progress :value="Number(progress)" desc :auto-succeed="200" :status.sync="status" :decimal-place="1"></veui-progress>
+    </section>
+    <section>
+      <h2>线性进度条（自适应宽度）</h2>
+      <veui-progress :value="Number(progress)" ui="fluid" desc :auto-succeed="200" :status.sync="status" :decimal-place="1"></veui-progress>
     </section>
     <section>
       <h2>环形进度条</h2>
-      <veui-progress type="circular" :value="Number(progress)" desc :auto-succeed="200" :state.sync="state"></veui-progress>
+      <veui-progress type="circular" :value="Number(progress)" desc :auto-succeed="200" :status.sync="status"></veui-progress>
     </section>
     <section>
       <h2>小型环形进度条</h2>
-      <veui-progress ui="tiny" type="circular" :value="Number(progress)" desc :auto-succeed="200" :state.sync="state"></veui-progress>
+      <veui-progress ui="tiny" type="circular" :value="Number(progress)" desc :auto-succeed="200" :status.sync="status"></veui-progress>
     </section>
   </article>
 </template>
@@ -37,7 +41,7 @@ export default {
   data () {
     return {
       progress: 0.3,
-      state: null
+      status: null
     }
   }
 }

@@ -1,5 +1,5 @@
 import {
-  normalizeClass,
+  mergeClasses,
   getClassPropDef,
   resolveOverlayPosition
 } from '../utils/helper'
@@ -34,11 +34,11 @@ export default {
   },
   methods: {
     mergeOverlayClass (klass) {
-      return { ...normalizeClass(this.overlayClass), ...normalizeClass(klass) }
+      return mergeClasses(this.overlayClass, klass)
     },
     relocate () {
       if (!this.$refs.overlay) {
-        throw new Error('Can not find tip overlay to relocate')
+        throw new Error('Can not find [this.$refs.overlay] to relocate')
       }
       this.$refs.overlay.relocate()
     }

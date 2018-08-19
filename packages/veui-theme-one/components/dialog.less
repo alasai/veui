@@ -21,12 +21,26 @@
     background: #fff;
     position: absolute;
     width: 400px;
-    max-height: 100vh;
+    max-height: ~"calc(100vh - 40px)";
     overflow-y: auto;
     outline: none;
     pointer-events: auto;
+    transition: transform .2s;
+    transform-origin: 50% 50%;
 
-    .veui-dialog-box[ui~="top"] & {
+    [ui~="small"] & {
+      width: 350px;
+    }
+
+    [ui~="large"] & {
+      width: 540px;
+    }
+
+    [ui~="auto"] & {
+      width: auto;
+    }
+
+    .veui-dialog-box[ui~="high"] & {
       .veui-position-center(@y: 38.2%);
     }
 
@@ -46,6 +60,7 @@
     }
 
     &-head-title {
+      margin: 0;
       font-weight: @veui-font-weight-normal;
       font-size: @veui-font-size-large;
     }
@@ -76,11 +91,15 @@
 
     &-body {
       padding-top: 0;
-      .margin(10px, 20px, 0, 20px);
+      .margin(20px, 20px, 0);
+    }
+
+    &-head + &-body {
+      margin-top: 10px;
     }
 
     &-foot {
-      .padding(20px);
+      padding: 30px 20px 20px;
       text-align: center;
     }
 
@@ -100,9 +119,14 @@
 
     // 提升优先级，覆盖样式
     &,
-    &[ui~="top"] {
+    &[ui~="high"] {
       .fixed(0);
       transform: none;
     }
+  }
+
+  .veui-overlay-enter &-content,
+  .veui-overlay-leave-to &-content {
+    transform: translate(50%, ~"calc(50% - 30px)");
   }
 }

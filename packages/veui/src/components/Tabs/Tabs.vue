@@ -8,7 +8,7 @@
     'veui-tabs-right-limited': rightLimited
   }"
   :ui="ui"
-  v-resize="listResizeHandler"
+  v-resize.debounce="listResizeHandler"
 >
   <div :class="{
       'veui-tabs-menu': true,
@@ -265,25 +265,27 @@ export default {
         let end = $event => {
           $event.stopPropagation()
         }
-        tabItem.querySelector('.veui-tabs-item-label').addEventListener('transitionend', end)
-        if (tab.removable) {
-          tabItem.querySelector('.veui-tabs-item-remove').addEventListener('transitionend', end)
+        let label = tabItem.querySelector('.veui-tabs-item-label')
+        let remove = tabItem.querySelector('.veui-tabs-item-remove')
+        if (label) {
+          label.addEventListener('transitionend', end)
+        }
+        if (tab.removable && remove) {
+          remove.addEventListener('transitionend', end)
         }
       })
     },
 
     removeById (id) {
-      this.remove(this.tabUids.indexOf(id))
-    },
+      let index = this.tabUids.indexOf(id)
 
-    remove (index) {
       if (index < 0) {
         return
       }
 
       // 外部控制有可能会多次进入，把任务往后推
       if (this.removing) {
-        setTimeout(() => this.remove(index), 500)
+        setTimeout(() => this.removeById(id), 100)
         return
       }
       this.removing = true

@@ -1,15 +1,10 @@
 import Vue from 'vue'
 import { remove } from 'lodash'
 
-export default class SpecialDialog {
-  type = null
+export default class SimpleDialog {
   components = []
 
-  constructor (type) {
-    this.type = type
-  }
-
-  createComponent (data) {
+  createComponent () {
     const component = new Vue({
       render: h => h()
     })
@@ -29,25 +24,39 @@ export default class SpecialDialog {
   removeComponent (component) {
     remove(this.components, item => item === component)
     component.$destroy()
-    component.$el.parentNode.removeChild(component.$el)
+
+    let { $el } = component
+    if ($el && $el.parentNode) {
+      $el.parentNode.removeChild($el)
+    }
+  }
+
+  _show () {
+    throw new Error('SimpleDialog\'s [_show] method must be implemented.')
+  }
+
+  show (content, title, options = {}) {
+    return this._show({
+      ...options,
+      content,
+      title
+    })
   }
 
   success (content, title, options = {}) {
     return this._show({
       ...options,
-      content,
       title,
+      content,
       type: 'success'
     })
   }
 
-  _show () {}
-
   info (content, title, options = {}) {
     return this._show({
       ...options,
-      content,
       title,
+      content,
       type: 'info'
     })
   }
@@ -55,8 +64,8 @@ export default class SpecialDialog {
   error (content, title, options = {}) {
     return this._show({
       ...options,
-      content,
       title,
+      content,
       type: 'error'
     })
   }
@@ -64,8 +73,8 @@ export default class SpecialDialog {
   warn (content, title, options = {}) {
     return this._show({
       ...options,
-      content,
       title,
+      content,
       type: 'warning'
     })
   }

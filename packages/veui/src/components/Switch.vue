@@ -3,12 +3,18 @@
   :class="{
     'veui-switch': true,
     'veui-switch-on': localChecked,
-    'veui-switch-disabled': realDisabled || realReadonly
+    'veui-readonly': realReadonly,
+    'veui-disabled': realDisabled
   }"
   :ui="ui">
+  <input
+    type="checkbox"
+    v-bind="attrs"
+    :disabled="realDisabled || realReadonly"
+    @change="handleChange($event.target.checked)"
+    v-on="listeners">
   <div class="veui-switch-switcher">
-    <input type="checkbox" v-bind="attrs" :disabled="realDisabled || realReadonly" @change="handleChange($event.target.checked)">
-    <span class="veui-switch-button"></span>
+    <div class="veui-switch-button"></div>
   </div>
   <template v-if="$slots.default">
     <div class="veui-switch-label"><slot/></div>
@@ -21,6 +27,9 @@ import Icon from './Icon'
 import ui from '../mixins/ui'
 import input from '../mixins/input'
 import { pick } from 'lodash'
+import { getListeners } from '../utils/helper'
+
+const EVENTS = ['click', 'keyup', 'keydown', 'keypress', 'focus', 'blur']
 
 export default {
   name: 'veui-switch',
@@ -51,9 +60,12 @@ export default {
   computed: {
     attrs () {
       return {
-        ...pick(this.$props, 'name', 'readonly', 'indeterminate'),
+        ...pick(this.$props, 'name', 'readonly'),
         checked: this.localChecked
       }
+    },
+    listeners () {
+      return getListeners(EVENTS, this)
     }
   },
   watch: {
@@ -81,6 +93,12 @@ export default {
     handleChange (checked) {
       this.localChecked = checked
       this.$emit('change', checked)
+    },
+    activate () {
+      if (this.realDisabled || this.realReadonly) {
+        return
+      }
+      this.localChecked = !this.localChecked
     }
   }
 }

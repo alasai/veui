@@ -1,13 +1,16 @@
 <template>
 <div class="veui-overlay">
-  <div class="veui-overlay-box"
-    :class="overlayClass"
-    :ui="ui"
-    ref="box"
-    :style="{zIndex}"
-    v-show="realOpen">
-    <slot/>
-  </div>
+  <transition name="veui-overlay">
+    <div
+      class="veui-overlay-box"
+      :class="realOverlayClass"
+      :ui="ui"
+      ref="box"
+      :style="{zIndex}"
+      v-show="realOpen">
+      <slot/>
+    </div>
+  </transition>
 </div>
 </template>
 
@@ -19,14 +22,15 @@ import overlayManager from '../managers/overlay'
 import focusManager from '../managers/focus'
 import config from '../managers/config'
 import ui from '../mixins/ui'
-import { getClassPropDef, isType } from '../utils/helper'
+import { getClassPropDef, mergeClasses, isType } from '../utils/helper'
 import '../common/uiTypes'
 
 config.defaults({
-  'overlay.baseZIndex': 200
+  'overlay.baseZIndex': 200,
+  'overlay.overlayClass': {}
 })
 
-overlayManager.setBaseZIndex(config.get('overlay.baseZIndex'))
+overlayManager.setBaseOrder(config.get('overlay.baseZIndex'))
 
 export default {
   name: 'veui-overlay',
@@ -56,6 +60,14 @@ export default {
       source: null
     }
   },
+  computed: {
+    realOpen () {
+      return this.zIndex !== null && this.open
+    },
+    realOverlayClass () {
+      return mergeClasses(this.overlayClass, config.get('overlay.overlayClass'))
+    }
+  },
   watch: {
     realOpen (value) {
       this.updateOverlayDOM()
@@ -63,7 +75,6 @@ export default {
       if (value) {
         let node = this.overlayNode
         node.toTop()
-
         this.initFocus()
       } else {
         this.destroyFocus()
@@ -95,21 +106,16 @@ export default {
     this.findTargetNode()
     this.updateOverlayDOM()
   },
-  computed: {
-    realOpen () {
-      return this.zIndex !== null && this.open
-    }
-  },
   methods: {
     // 更新 zindex 树
     updateNode () {
       if (!this.overlayNode) {
         this.overlayNode = overlayManager.createNode({
           parentId: this.findParentOverlayId(),
-          priority: this.priority
-        })
-        this.overlayNode.$on('zindexchange', zIndex => {
-          this.zIndex = zIndex
+          priority: this.priority,
+          orderChangeCallback: order => {
+            this.zIndex = order
+          }
         })
       } else {
         this.overlayNode.appendTo(this.findParentOverlayId(), this.priority)
@@ -117,7 +123,7 @@ export default {
     },
 
     findParentOverlayId () {
-      let cur = this.$vnode.context
+      let cur = this.$parent
       while (cur) {
         if (cur && this.isOverlay(cur)) {
           return cur.overlayNode.id
@@ -172,6 +178,7 @@ export default {
 
     focus () {
       this.overlayNode.toTop()
+      this.focusContext.toTop()
     },
 
     initFocus () {
@@ -184,8 +191,8 @@ export default {
           source: document.activeElement,
           trap: this.modal
         })
-      } else {
-        focusManager.toTop(this.focusContext)
+
+        this.lastSource = document.activeElement
       }
     },
 
@@ -201,7 +208,6 @@ export default {
     this.tether = null
 
     let node = this.overlayNode
-    node.$off()
     node.remove()
     this.overlayNode = null
 

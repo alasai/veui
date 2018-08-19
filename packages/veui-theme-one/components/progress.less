@@ -6,9 +6,12 @@
   .clearfix();
   display: inline-block;
   position: relative;
-  .padding(_, 10px);
   color: @veui-text-color-weak;
   transition: color .3s;
+
+  &[ui~="fluid"] {
+    width: 100%;
+  }
 
   &-bar {
     .centered-line(@height);
@@ -19,6 +22,16 @@
       float: left;
       margin-top: (@height - @thickness) / 2;
       background-color: @veui-gray-color-5;
+    }
+
+    @desc-width: 60px;
+
+    &[ui~="fluid"] .veui-progress-rail {
+      width: 100%;
+    }
+
+    &[ui~="fluid"] .veui-progress-desc + .veui-progress-rail {
+      width: ~"calc(100% - @{desc-width})";
     }
 
     .veui-progress-meter {
@@ -48,7 +61,7 @@
   }
 
   &-desc {
-    float: left;
+    float: right;
     padding-left: 10px;
   }
 
@@ -76,7 +89,7 @@
     }
   }
 
-  &-state {
+  &-status {
     &-complete {
       color: @veui-text-color-normal;
     }

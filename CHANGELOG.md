@@ -1,9 +1,152 @@
+## 1.0.0-alpha.17
+
+### ⚠️ 非兼容性变更
+
+* [^] `Dialog` 组件预设 `ui` 值 `top` 更名为 `high`。
+
+### 💡 主要变更
+
+* [+] 增加 `longpress` 指令。
+* [+] `Dropdown` 组件增加了 `trigger` prop，来指定何时展开下拉框。
+* [+] `Dropdown` 组件增加了 `split` prop，来允许拆分指令按钮与下拉切换按钮。
+* [+] `Button` 组件增加了 `mouseenter`/`mouseleave` 事件。
+* [+] `NumberInput` 组件支持长按调整值。
+* [+] `Progress` 组件增加了预设 `ui` 值 `fluid`，自适应容器宽度。
+* [+] `Dialog` 组件增加了预设 `ui` 值 `small`/`large`/`auto`，用于指定预设宽度。
+
+### 🐞 问题修复
+
+* [^] 修复 `Tabs` 组件移除标签时可能产生的问题。
+
+## 1.0.0-alpha.16
+
+### 💡 主要变更
+
+* [+] 增加了 `babel-preset-veui`，简化了引入 VEUI 一起进行转译所需的步骤。
+* [^] 引入 `date-fns` 替换了对 `moment` 的依赖。
+
+### 🐞 问题修复
+
+* [^] 修复了 `DatePicker` 组件 `panel` prop 默认值错误的问题。
+* [^] 修正 `Alert` 组件样式。
+* [^] 修正 `Breadcrumb` 组件样式。
+
+## 1.0.0-alpha.15
+
+### ⚠️ 非兼容性变更
+
+* [^] 因为 `less@2` 依赖的包存在安全漏洞，故此次升级将对 `less` 的依赖升级到了 `^3.8.0`，对 `less-plugin-est` 的依赖升级到了 `^3.0.0`。
+
+  > #### 迁移指南
+  >
+  > 1. 更新 `less` 与 `less-plugin-est` 的版本；
+  > 2. 如果使用 `vue-cli` 的 `webpack` 模板初始化项目，请按如下方式修改 `build/utils.js` 文件：
+  >
+  >  ```diff
+  >  -    less: generateLoaders('less'),
+  >  +    less: generateLoaders('less', { javascriptEnabled: true }),
+  >  ```
+
+* [^] `Dialog` 组件现在默认会在点击默认的按钮及按下 <kbd>esc</kbd> 键时关闭并通过 `.sync` 修饰符同步外部数据。并且新增 `before-close` 函数 prop 来处理需要阻止对话框关闭的情况。增加 `default`/`foot` slot 的 slot 参数 `close`，用来在重写组件 slot 时调用关闭逻辑。
+
+  > #### 迁移指南
+  >
+  > 对于重写 `foot` slot 处理关闭逻辑的使用方式，不会受新逻辑影响。
+  >
+  > 对于监听 `ok`/`cancel` 事件并直接关闭对话框时，亦不受此改动影响。当需要阻止对话框关闭时，需要使用新增的 `before-close` 函数 prop。
+  >
+  > `before-close` prop 对应的函数类型为 `function(type: string): boolean=|Promise<boolean=>`，`type` 将会是 `Dialog` 组件关闭操作的类型，默认情况下会有 `ok` 与 `cancel`。返回值可以是一个 `boolean`，也可以是一个 resolve `boolean` 的 `Promise`，用来处理可能需要异步决定对话框关闭状态的情况。返回值或 resolve 值非 `false` 时才会关闭对话框。例如，如果我们要异步处理 `ok`，而对 `cancel` 直接关闭，可以按如下方式处理：
+  >
+  > ```html
+  > <veui-dialog :open.sync="dialogOpen" :before-close="submit">...</veui-dialog>
+  > ```
+  >
+  > ```js
+  > methods: {
+  >   submit (type) {
+  >     if (type === 'ok') {
+  >       return axios.post('/item/create', {/* ... */})
+  >         .then(({ id, error }) => {
+  >           if (error) {
+  >             this.showError(error)
+  >             return false // resolve `false` 将阻止对话框关闭
+  >           }
+  >         })
+  >     }
+  >     // resolve 但不返回 `false` 时会关闭对话框
+  >   },
+  >   // ...
+  > }
+  > ```
+  >
+  > 对于需要重写 slot（例如添加底部按钮等）的情况，可以使用新增的 slot 参数 `close`，类型为 `function(type: string): void`，使用者只需要在合适的时机自行调用 `close` 函数即可，`type` 默认支持 `ok`/`cancel` 并会透传到 `before-close` 的流程中。例如：
+  >
+  > ```html
+  > <veui-dialog :open.sync="dialogOpen" :before-close="submit">
+  >   ...
+  >   <template slot="foot" slot-scope="{ close }"><button @click="close">OK</button></template>
+  > </veui-dialog>
+  > ```
+
+* [^] `Pagination` 组件的 `redirect` 事件回调参数从 `({ page, event })` 调整为 `(page, event)`。
+* [^] 调整 `FilterPanel` 组件和 `Tree` 组件的对外接口参数名，统一将 `options`/`option` 更名为 `items`/`item`。
+* [^] 调整 `resize` 指令的默认每次都触发回调，增加 `throttle`/`debounce`/`leading` 三个 modifier。
+* [^] 通过 `prompt` manager 以指令式调用输入弹框功能时，现在返回的 `Promise` 在确认提交与取消时 `resolve` 的值分别是字符串和 `null`，与原生全局 `prompt` 方法一致（原来是 `{ isOk: true, value }` 与 `false`）。
+* [^] `Button` 组件加载中的文本修改为默认 slot 的内容。
+* [^] 调整 `rule` 出错信息变量模板匹配语法从 `%{ruleValue}` 修为 `${ruleValue}`，旧语法将在 `1.0.0` 移除。
+* [^] `Alert` 组件新增 `closable` prop，默认为 `false`，显式指定后才会显示关闭按钮/文本，而非原来的始终显示关闭按钮/文本。
+* [^] `Alert` 组件的 `close-text` prop 更名为 `close-label`，`close-text` 将在 `1.0.0` 移除。
+
+### 💡 主要变更
+
+* [+] `Uploader` 组件增加自定义上传模式。`request-mode` 新增可选值 `custom`，设置为该值时，支持通过新增的 prop `upload` 自定义上传函数。
+* [+] `Uploader` 组件增加切换动画。
+* [+] `Steps` 组件的 `click` 事件回调参数增加原生事件对象 `event`，现为 `(index, event)`。
+* [+] `Overlay` 组件浮层根元素上现在增加了对 `overlay.overlayClass` 全局配置项对应类名的输出。
+* [+] `Switch` 组件现在会透传与 `Checkbox` 组件一致的原生 DOM 事件。
+* [+] `Toast` 组件增加 prop `open`，支持 `.sync`。
+* [+] `Toast` 组件增加 slot `default`。
+* [+] `Toast` 组件增加全局配置 `toast.duration`。
+
+### 🐞 问题修复
+
+* [^] 修复了 `Uploader` 组件 `iframe` 模式中上传失败后重试时没有上传文件的问题。
+* [^] 修复了 `Uploader` 组件初始化后丢失 `name` 和 `src` 以外的自定义属性丢失的问题。
+* [^] 修复了 `Overlay` 组件中寻找最近父级浮层时，可能跨过太多层级的问题。
+* [^] 修复了 `FilterPanel` 组件在不展示搜索框的时候，内容区域高度不正确的问题。
+* [^] 修复了 `Field` 组件内部输入组件交互时数据同步导致校验不正确的问题。
+* [^] 修复了 `Tabs` 组件使用 `label` slot 时的事件绑定问题。
+* [^] 修复了 `Input` 组件父级设置值为 `null` 后，仅格式化本地值为 `''`，未同步 `''` 至父级的问题。
+* [^] 去除了 `Steps` 组件的多余外边距。
+* [^] 去除了 `Progress` 组件多余的内边距。
+* [^] 修正了 `Progress` 组件的 `auto-succeed` prop 的逻辑。
+* [^] 修正了 `NumberInput` 组件的 `min`/`max` prop 有时失效的问题。
+* [^] 修正了 `Alert` 组件多消息导航和关闭按钮不会同时显示的问题。
+* [^] 修正了 `alert`/`confirm`/`prompt` plugin 不能正常工作的问题。
+* [^] 修复了 `Table` 组件 `foot` slot 的渲染。
+
 ## 1.0.0-alpha.14
+
+### ⚠️ 非兼容性变更
+
+* [^] `Progress` 组件的 `state` prop 更名为 `status`。`state` 将在 `1.0.0` 移除。
+* [^] `Schedule` 组件的 `shortcuts-display` prop 值 `expand`/`collapse` 分别更名为 `inline`/`popup`。旧的值将在 `1.0.0` 移除。
+* [^] `Schedule` 组件的 `header` slot 更名为 `header-content`，新 `header` slot 现在包括顶部内容的整个容器。
+
+### 💡 主要变更
+
+* [^] `RegionPicker` 组件的 `datasource` prop 中的 `id` 字段重命名为 `value`，但 `id` 依然保留，优先使用 `value`。
+* [^] 优化了 `outside` 指令解析数字值的逻辑。
+* [^] 为 `Pagination` 组件内的 `Select` 组件新增了 `overlay-class` 定义，方便自定义样式。
+* [^] 优化了 `Switch`、`Steps`、`Schedule`、`Table`、`Fieldset` 等组件的可访问性，实现了键盘交互。
 
 ### 🐞 问题修复
 
 * [^] 修复了更多在计算浮层层级过程中有时会导致死循环的场景。
 * [^] 去除了 `dropdown` mixin 中 多余的默认 `overlay-options` 约束条件，修正某些场景下的浮层展开的默认方向。
+* [^] 修复了 `Input` 组件初始值为 `null` 时使用输入法会失效的问题。
+* [^] 现在 `Searchbox` 组件在 `suggestions` 变化时会自动更新浮层位置。
+* [^] 修复了点击 `Label` 组件激活同 `Field` 下的输入组件时，没有考虑组件禁用/只读状态的问题。
 
 ## 1.0.0-alpha.13
 

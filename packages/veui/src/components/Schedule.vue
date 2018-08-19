@@ -1,42 +1,58 @@
 <template>
-<div class="veui-schedule" :ui="ui">
-  <div class="veui-schedule-header">
-    <slot name="header">
-      <slot name="shortcuts" v-if="shortcuts && shortcuts.length">
-        <div class="veui-schedule-shortcuts">
-          <template v-if="shortcutsDisplay === 'expand'">
-            <button type="button" v-for="({ label }, i) in shortcuts" :key="i"
-              @click="selectShortcut(i)"
-              :class="{
-                'veui-schedule-shortcut': true,
-                'veui-schedule-shortcut-selected': shortcutChecked[i]
-              }">{{ label }}</button>
-          </template>
-          <template v-else>
-            <veui-dropdown ui="link" label="默认时段" :options="shortcutOptions"
-              @click="selectShortcut"></veui-dropdown>
-          </template>
-        </div>
+<div
+  class="veui-schedule"
+  :ui="ui"
+  role="application"
+  aria-label="时段选择"
+  :aria-disabled="realDisabled"
+  :aria-readonly="realReadonly">
+  <slot name="header">
+    <div class="veui-schedule-header">
+      <slot name="header-content">
+        <slot name="shortcuts" v-if="shortcuts && shortcuts.length">
+          <div class="veui-schedule-shortcuts">
+            <template v-if="shortcutsDisplay === 'inline'">
+              <button type="button" v-for="({ label }, i) in shortcuts" :key="i"
+                @click="selectShortcut(i)"
+                :class="{
+                  'veui-schedule-shortcut': true,
+                  'veui-schedule-shortcut-selected': shortcutChecked[i]
+                }">{{ label }}</button>
+            </template>
+            <template v-else>
+              <veui-dropdown
+                ui="link"
+                label="默认时段"
+                aria-label="选择预设时段"
+                :options="shortcutOptions"
+                @click="selectShortcut"/>
+            </template>
+          </div>
+        </slot>
+        <slot name="legend">
+          <div class="veui-schedule-legend" aria-hidden="true">
+            <span v-for="(status, i) in statuses" :key="i"
+              class="veui-schedule-legend-item" :class="`veui-schedule-legend-${status.value || status.name}`">
+              <slot name="legend-label" v-bind="status">{{ status.label }}</slot>
+            </span>
+          </div>
+        </slot>
       </slot>
-      <slot name="legend">
-        <div class="veui-schedule-legend">
-          <span v-for="(status, i) in statuses" :key="i"
-            class="veui-schedule-legend-item" :class="`veui-schedule-legend-${status.name}`">
-            <slot name="legend-label" v-bind="status">{{ status.label }}</slot>
-          </span>
-        </div>
-      </slot>
-    </slot>
-  </div>
+    </div>
+  </slot>
   <div class="veui-schedule-body">
     <div class="veui-schedule-head-hour">
       <div class="veui-schedule-head-hour-item" v-for="i in 13" :key="i">{{ `${(i - 1) * 2}:00` }}</div>
     </div>
     <div class="veui-schedule-head-day">
       <div class="veui-schedule-head-day-item" v-for="i in 7" :key="i">
-        <veui-checkbox ui="small" :indeterminate="dayChecked[i - 1].indeterminate"
-          :checked="dayChecked[i - 1].checked" @change="toggleDay(week[i - 1], !dayChecked[i - 1].checked)">
-          {{ `${dayNames[i - 1]}` }}
+        <veui-checkbox
+          ui="small"
+          :indeterminate="dayChecked[i - 1].indeterminate"
+          :checked="dayChecked[i - 1].checked"
+          :aria-label="`选择星期${dayNames[i - 1]}全天`"
+          @change="toggleDay(week[i - 1], !dayChecked[i - 1].checked)">
+          {{ dayNames[i - 1] }}
         </veui-checkbox>
       </div>
     </div>
@@ -49,10 +65,18 @@
           <td v-for="(hour, j) in day" :key="j" :class="{ 'veui-schedule-selected': hour.isSelected }">
             <button type="button" :disabled="realDisabled || hour.isDisabled"
               :class="mergeClass({ 'veui-schedule-selected': hour.isSelected }, week[i], j)"
-              :ref="`${week[i]}-${j}`"
+              :ref="`hour-${week[i]}-${j}`"
+              :tabindex="i === 0 && j === 0 ? '0' : '-1'"
+              :aria-label="getDayLabel(i, j, hour)"
               @mousedown="handleMousedown(i, j)"
               @mouseenter="handleHover(i, j)"
-              @mouseup="pick()"><slot name="hour" :day="week[i]" :hour="j"/></button>
+              @mouseup="pick"
+              @keydown.space.enter="handleMousedown(i, j)"
+              @keyup.space.enter="pick"
+              @keydown.up.prevent="moveFocus((i + 6) % 7, j)"
+              @keydown.right.prevent="moveFocus(i, (j + 25) % 24)"
+              @keydown.down.prevent="moveFocus((i + 1) % 7, j)"
+              @keydown.left.prevent="moveFocus(i, (j + 23) % 24)"><slot name="hour" :day="week[i]" :hour="j"/></button>
           </td>
         </tr>
       </table>
@@ -77,8 +101,14 @@
           </template>
         </tr>
       </table>
-      <veui-tooltip :target="currentRef" position="right" trigger="hover"
-        :delay="0" :interactive="false" ui="small" open>
+      <veui-tooltip
+        :target="currentRef"
+        position="right"
+        trigger="hover"
+        :delay="0"
+        :interactive="false"
+        ui="small"
+        open>
         <slot name="tooltip" v-bind="current">{{ currentLabel }}</slot>
       </veui-tooltip>
     </div>
@@ -92,6 +122,7 @@ import ui from '../mixins/ui'
 import input from '../mixins/input'
 import outside from '../directives/outside'
 import { merge } from '../utils/range'
+import warn from '../utils/warn'
 import config from '../managers/config'
 import { normalizeClass, keepOwn } from '../utils/helper'
 import Checkbox from './Checkbox'
@@ -102,9 +133,14 @@ config.defaults({
   shortcuts: []
 }, 'schedule')
 
-let dayNames = [
+const DAY_NAMES = [
   '一', '二', '三', '四', '五', '六', '日'
 ]
+
+function warnDeprecated (oldVal, newVal) {
+  warn('[veui-schedule] `shortcuts-display` value `' + oldVal + '` is renamed to `' +
+    newVal + '` and will be removed in `1.0.0`. Use `' + newVal + '` instead.')
+}
 
 export default {
   name: 'veui-schedule',
@@ -127,7 +163,7 @@ export default {
       }
     },
     hourClass: {
-      type: [String, Object, Function],
+      type: [String, Array, Object, Function],
       default: function () {
         return {}
       }
@@ -146,9 +182,14 @@ export default {
     },
     shortcutsDisplay: {
       type: String,
-      default: 'expand',
+      default: 'inline',
       validator (value) {
-        return includes(['expand', 'collapse'], value)
+        if (value === 'expand') {
+          warnDeprecated('expand', 'inline')
+        } else if (value === 'collapse') {
+          warnDeprecated('collapse', 'popup')
+        }
+        return includes(['expand', 'collapse', 'inline', 'popup'], value)
       }
     },
     statuses: {
@@ -177,7 +218,7 @@ export default {
   },
   computed: {
     dayNames () {
-      return [...dayNames]
+      return [...DAY_NAMES]
     },
     dayChecked () {
       return this.week.map(day => {
@@ -223,7 +264,7 @@ export default {
       if (!current) {
         return null
       }
-      return `${current.day}-${current.hour}`
+      return `hour-${current.day}-${current.hour}`
     },
     currentLabel () {
       let current = this.current
@@ -350,6 +391,19 @@ export default {
         this.$delete(this.localSelected, day)
       }
       this.$emit('select', this.localSelected)
+    },
+    moveFocus (dayIndex, hour) {
+      let day = this.week[dayIndex]
+      this.handleHover(dayIndex, hour)
+
+      let el = (this.$refs[`hour-${day}-${hour}`] || [])[0]
+      if (el && typeof el.focus === 'function') {
+        el.focus()
+      }
+    },
+    getDayLabel (dayIndex, hour, state) {
+      let dayName = DAY_NAMES[dayIndex]
+      return `星期${dayName}，${hour}:00–${hour + 1}:00，${state.isSelected ? '已选择' : '未选择'}`
     }
   }
 }

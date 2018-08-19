@@ -1,20 +1,51 @@
 import { addListener, removeListener } from 'resize-detector'
-import { debounce } from 'lodash'
+import { debounce, throttle, isObject, assign, isEqual, find } from 'lodash'
+import { getNumberArg } from '../utils/helper'
 
-function attach (el, { value, oldValue }) {
-  if (!oldValue) {
-    let fn = debounce(value, 150)
-    el.__veui_resize_handler__ = fn
-    addListener(el, fn)
-    return
+const modeMap = {
+  debounce,
+  throttle
+}
+
+function attach (el, { value, oldValue, modifiers }) {
+  let mode = find(Object.keys(modeMap), mode => modifiers[mode])
+  let wait = getNumberArg(modifiers, 150)
+  let options = {
+    wait,
+    mode,
+    handler: value,
+    leading: modifiers.leading
+  }
+  if (isObject(value)) {
+    assign(options, value)
   }
 
-  if (oldValue && value.toString() !== oldValue.toString()) {
-    let fn = el.__veui_resize_handler__
-    removeListener(el, fn)
-    fn = debounce(value, 150)
-    el.__veui_resize_handler__ = fn
-    addListener(el, fn)
+  let fn = modeMap[options.mode]
+  let cb = fn ? fn(options.handler, options.wait, options.leading) : options.handler
+
+  if (!oldValue) {
+    el.__veui_resize_handler__ = cb
+    addListener(el, cb)
+  } else {
+    let oldOptions = {
+      wait,
+      mode,
+      handler: oldValue,
+      leading: modifiers.leading
+    }
+
+    if (isObject(oldValue)) {
+      assign(oldOptions, oldValue)
+    }
+
+    let changed = isEqual(oldValue, options)
+
+    if (changed) {
+      let oldCb = el.__veui_resize_handler__
+      removeListener(el, oldCb)
+      el.__veui_resize_handler__ = cb
+      addListener(el, cb)
+    }
   }
 }
 

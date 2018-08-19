@@ -9,16 +9,16 @@
     'veui-field-required': isRequired
   }"
 >
-  <span v-if="label || $slots.label" class="veui-form-label">
+  <div v-if="label || $slots.label" class="veui-form-label">
     <slot name="label"><veui-label>{{ label }}</veui-label></slot>
-  </span>
+  </div>
   <slot/>
-  <span v-if="tip || $slots.tip" class="veui-form-tip"><slot name="tip">{{ tip }}</slot></span>
-  <p
+  <div v-if="tip || $slots.tip" class="veui-form-tip"><slot name="tip">{{ tip }}</slot></div>
+  <div
     v-if="!validity.valid && !!validity.message"
     class="veui-field-error"
     :title="validity.message"
-  ><veui-icon :name="icons.alert"/>{{ validity.message }}</p>
+  ><veui-icon :name="icons.alert"/>{{ validity.message }}</div>
 </div>
 </template>
 
@@ -71,7 +71,6 @@ export default {
        * @type {Array<fields, message, valid>}
        */
       validities: [],
-      handlers: {},
       initialData: null
     }
   },
@@ -191,10 +190,14 @@ export default {
       return res
     },
     handleInteract (eventName) {
+      // 需要让对应的 data 更新完值之后，再去 validate，都要 nextTick 来保证
       if (this.interactiveRulesMap[eventName]) {
-        this.validate(this.interactiveRulesMap[eventName])
+        this.$nextTick(() => this.validate(this.interactiveRulesMap[eventName]))
       }
-      this.name && this.form.$emit('interact', eventName, this.name)
+
+      if (this.name) {
+        this.$nextTick(() => this.form.$emit('interact', eventName, this.name))
+      }
     },
     hideValidity (fields) {
       if (!fields || !fields.length) {

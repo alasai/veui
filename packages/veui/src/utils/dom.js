@@ -1,4 +1,4 @@
-import { findIndex } from 'lodash'
+import { findIndex, uniq } from 'lodash'
 
 export function closest (element, selectors) {
   if (element.closest) {
@@ -211,31 +211,16 @@ export function focusAfter (elem) {
 }
 
 /**
- * 通过程序 focus 时手动添加 `.focus-visible` 类，弥补当前 polyfill 的不足。
- * 在不支持 `classList` 的浏览器下啥都不做，因为 polyfill 依赖了 `classList` polyfill。
- * 如果不引 `classList`，本来就不能工作，也就无需添加类。
- * 如果 `focus-visible` polyfill 修改了行为，也就不需要进行这样的处理了。
+ * 安全地 focus 一个元素
  *
  * @param {HTMLElement} elem
  */
 export function focus (elem) {
-  if (!elem) {
+  if (!elem || typeof elem.focus !== 'function') {
     return
   }
 
   elem.focus()
-  if (!elem.classList) {
-    return
-  }
-
-  let handler = () => {
-    elem.classList.remove('focus-visible')
-    elem.removeEventListener('blur', handler, false)
-    elem.removeEventListener('mouseleave', handler, false)
-  }
-  elem.addEventListener('blur', handler, false)
-  elem.addEventListener('mouseleave', handler, false)
-  elem.classList.add('focus-visible')
 }
 
 let transformKey
@@ -269,4 +254,34 @@ export function getTransform (el) {
  */
 export function setTransform (el, value) {
   el.style[getTransformKey()] = value
+}
+
+/**
+ * 切换指定元素的某个类名
+ *
+ * @param {HTMLElement} el 目标元素
+ * @param {string} className 需要切换的类名
+ * @param {boolean} force 强制添加/删除，为 true 则添加，为 false 则删除
+ */
+export function toggleClass (el, className, force) {
+  if (el.classList) {
+    return el.classList.toggle(className, force)
+  }
+
+  let klass = el.getAttribute('class')
+  let klasses = uniq(klass.trim().split(/\s+/))
+  let index = findIndex(klasses, k => k === className)
+  if (index !== -1) {
+    if (force === true) {
+      return
+    }
+    klasses.splice(index, 1)
+    el.setAttribute('class', klasses.join(' '))
+    return
+  }
+
+  if (force === false) {
+    return
+  }
+  el.setAttribute('class', klasses.concat([className]).join(' '))
 }

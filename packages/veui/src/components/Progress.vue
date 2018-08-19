@@ -4,10 +4,16 @@
   role="progressbar"
   :aria-valuemax="max"
   :aria-valuemin="min"
-  :aria-valuenow="value"
+  :aria-valuenow="realValue"
   :aria-valuetext="desc ? valueText : null"
   :class="klass"
   :ui="ui">
+  <div v-if="desc" class="veui-progress-desc">
+    <slot v-bind="{ percent, value: realValue, status }">
+      <veui-icon :name="icons.success" v-if="type === 'circular' && localStatus === 'success'"/>
+      <span class="veui-progress-desc-text">{{ valueText }}</span>
+    </slot>
+  </div>
   <div v-if="type === 'bar'" class="veui-progress-rail">
     <div class="veui-progress-meter" :style="{
       transform: `translateX(${percent}%)`
@@ -17,14 +23,8 @@
     :width="(radius + halfStroke) * 2" :height="(radius + halfStroke) * 2">
     <circle class="veui-progress-rail" :cx="radius + halfStroke" :cy="radius + halfStroke" :r="radius" fill="none" :stroke-width="stroke"></circle>
     <circle class="veui-progress-meter" :cx="radius + halfStroke" :cy="radius + halfStroke" :r="radius" fill="none" :stroke-width="stroke"
-      :stroke-dasharray="circumference" :stroke-dashoffset="circumference * (1 - ratio)"></circle>
+      :stroke-dasharray="circumference | fixed" :stroke-dashoffset="circumference * (1 - ratio) | fixed"></circle>
   </svg>
-  <div v-if="desc" class="veui-progress-desc">
-    <slot v-bind="{ percent, value, state }">
-      <veui-icon :name="icons.success" v-if="type === 'circular' && localState === 'success'"/>
-      <span class="veui-progress-desc-text">{{ valueText }}</span>
-    </slot>
-  </div>
 </div>
 </template>
 
@@ -32,6 +32,7 @@
 import ui from '../mixins/ui'
 import Icon from './Icon'
 import warn from '../utils/warn'
+import { clamp } from 'lodash'
 
 const RADIUS_DEFAULT = 60
 const STROKE_DEFAULT = 2
@@ -41,6 +42,11 @@ export default {
   mixins: [ui],
   components: {
     'veui-icon': Icon
+  },
+  filters: {
+    fixed (val) {
+      return Math.round(val * 100) / 100
+    }
   },
   props: {
     type: {
@@ -77,21 +83,36 @@ export default {
       type: Number,
       default: 1
     },
-    state: String,
+    status: String,
+    /**
+     * @deprecated
+     */
+    state: {
+      type: String,
+      validator (val) {
+        if (val != null) {
+          warn('[veui-progress] `state` is deprecated and will be removed in `1.0.0`. Use `status` instead.')
+        }
+        return true
+      }
+    },
     autoSucceed: [Boolean, Number]
   },
   data () {
     return {
-      localState: this.state
+      localStatus: this.status || this.state
     }
   },
   computed: {
+    realValue () {
+      return clamp(this.value, this.min, this.max)
+    },
     klass () {
       return {
-        'veui-progress-state-complete': this.value === this.max,
+        'veui-progress-status-complete': this.realValue === this.max,
         [`veui-progress-${this.type}`]: true,
-        ...this.localState
-          ? { [`veui-progress-state-${this.localState}`]: true }
+        ...this.localStatus
+          ? { [`veui-progress-status-${this.localStatus}`]: true }
           : {},
         ...this.indeterminate
           ? { 'veui-progress-indeterminate': true }
@@ -99,7 +120,7 @@ export default {
       }
     },
     ratio () {
-      return (this.value - this.min) / (this.max - this.min)
+      return (this.realValue - this.min) / (this.max - this.min)
     },
     percent () {
       return this.ratio * 100
@@ -120,9 +141,9 @@ export default {
       return (this.decimalPlace != null ? this.decimalPlace : this.precision) || 0
     },
     valueText () {
-      if (this.localState === 'success') {
+      if (this.localStatus === 'success') {
         return '完成'
-      } else if (this.localState === 'alert') {
+      } else if (this.localStatus === 'alert') {
         return '错误'
       } else {
         return this.percent.toFixed(this.decimalPlace) + '%'
@@ -130,29 +151,42 @@ export default {
     }
   },
   watch: {
-    value (val) {
-      if (this.state && this.state !== 'success') {
+    realValue (val) {
+      if (this.status && this.status !== 'success') {
         return
       }
+
+      if (this.status === 'success' && val < this.max) {
+        this.setStatus(null)
+        return
+      }
+
       if (this.autoSucceed != null) {
-        if (this.autoSucceed === true) {
-          this.setState(val === this.max ? 'success' : null)
+        if (this.autoSucceed === true || this.autoSucceed === 0) {
+          this.setStatus(val === this.max ? 'success' : null)
+          return
+        } else if (this.autoSucceed === false) {
           return
         }
-
         this.timer = setTimeout(() => {
-          this.setState(val === this.max ? 'success' : null)
+          this.setStatus(val === this.max ? 'success' : null)
         }, this.autoSucceed)
       }
     },
-    state (val) {
-      this.localState = val
+    status (val) {
+      this.localStatus = val
     }
   },
   methods: {
-    setState (state) {
-      this.localState = state
-      this.$emit('update:state', state)
+    setStatus (status) {
+      this.localStatus = status
+      this.$emit('update:status', status)
+      this.$emit('update:state', status)
+    }
+  },
+  created () {
+    if (this.max <= this.min) {
+      warn('[veui-progress] `max` must be larger than `min`.')
     }
   },
   destroy () {
