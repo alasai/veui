@@ -1,19 +1,17 @@
 <template>
-<div class="veui-overlay">
-  <transition
-    name="veui-overlay"
-    @after-leave="$emit('afterclose')">
-    <div
-      class="veui-overlay-box"
-      :class="realOverlayClass"
-      :ui="ui"
-      ref="box"
-      :style="{zIndex}"
-      v-show="realOpen">
-      <slot/>
-    </div>
-  </transition>
-</div>
+<transition
+  name="veui-overlay"
+  @after-leave="$emit('afterclose')">
+  <div
+    class="veui-overlay"
+    :class="realOverlayClass"
+    :ui="ui"
+    ref="box"
+    :style="{zIndex}"
+    v-show="realOpen">
+    <slot/>
+  </div>
+</transition>
 </template>
 
 <script>
@@ -24,6 +22,7 @@ import overlayManager from '../managers/overlay'
 import focusManager from '../managers/focus'
 import config from '../managers/config'
 import ui from '../mixins/ui'
+import { contains } from '../utils/dom'
 import { getClassPropDef, mergeClasses, isType } from '../utils/helper'
 import '../common/uiTypes'
 
@@ -98,8 +97,9 @@ export default {
     this.updateNode()
   },
   mounted () {
-    this.overlayBox = this.$refs.box
-    document.body.appendChild(this.overlayBox)
+    this.placeholder = document.createComment('')
+    this.$el.parentNode.insertBefore(this.placeholder, this.$el)
+    document.body.appendChild(this.$el)
 
     if (this.realOpen) {
       this.initFocus()
@@ -141,7 +141,7 @@ export default {
 
       if (this.targetNode) {
         let options = assign({}, this.options, {
-          element: this.overlayBox,
+          element: this.$el,
           target: this.targetNode
         })
 
@@ -189,7 +189,7 @@ export default {
       }
 
       if (!this.focusContext) {
-        this.focusContext = focusManager.createContext(this.overlayBox, {
+        this.focusContext = focusManager.createContext(this.$el, {
           source: document.activeElement,
           trap: this.modal
         })
@@ -205,7 +205,7 @@ export default {
       }
     }
   },
-  destroyed () {
+  beforeDestroy () {
     this.tether && this.tether.destroy()
     this.tether = null
 
@@ -215,8 +215,12 @@ export default {
 
     this.destroyFocus()
 
-    this.overlayBox.parentNode.removeChild(this.overlayBox)
-    this.overlayBox = null
+    if (!contains(document.body, this.$el)) {
+      this.placeholder.parentNode.removeChild(this.placeholder)
+    } else {
+      this.placeholder.parentNode.replaceChild(this.$el, this.placeholder)
+    }
+    this.placeholder = null
   }
 }
 </script>

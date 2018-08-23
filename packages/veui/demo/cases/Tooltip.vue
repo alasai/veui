@@ -110,7 +110,7 @@
     </section>
     <section>
       <div style="margin-bottom:10px;">自定义事件</div>
-      <veui-input ui="big" v-model="number" composition @change="log('change')" ref="number" @focus.native="numberOpen = true" @blur.native="numberOpen = false"></veui-input>
+      <veui-input ui="big" v-model="number" composition ref="number" @focus="numberOpen = true" @blur="numberOpen = false"></veui-input>
       <veui-tooltip position="top" :ui="ui" target="number" :custom="true" :open.sync="numberOpen">你focus到了</veui-tooltip>
     </section>
 
@@ -123,7 +123,6 @@
 </template>
 
 <script>
-import bus from '../bus'
 import { Tooltip, Button, Input } from 'veui'
 
 export default {
@@ -153,13 +152,6 @@ export default {
     'veui-button': Button,
     'veui-tooltip': Tooltip,
     'veui-input': Input
-  },
-  mounted () {
-    this.$children.forEach(child => {
-      child.$on('click', () => {
-        bus.$emit('log', child.$el.getAttribute('ui'))
-      })
-    })
   },
   methods: {
     show (obj) {

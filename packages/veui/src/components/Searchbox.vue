@@ -49,7 +49,6 @@
     target="input"
     :options="realOverlayOptions"
     :open="realExpanded"
-    v-if="realExpanded"
     :overlay-class="overlayClass">
     <div class="veui-searchbox-suggestion-overlay"
       ref="box"

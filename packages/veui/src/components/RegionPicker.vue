@@ -97,7 +97,7 @@
                 <slot name="label" v-bind="group" :level="2">{{ group.label }}</slot>
               </veui-checkbox>
               <veui-overlay
-                v-if="group.children && group.active"
+                v-if="group.children"
                 :open.sync="group.active"
                 :overlay-class="overlayClass"
                 :target="`node-${si}-${bi}-${gi}`"
@@ -148,7 +148,7 @@
                 </div>
               </veui-overlay>
               <veui-overlay
-                v-if="group.children && group.active"
+                v-if="group.children"
                 :open.sync="group.active"
                 :overlayClass="mergeOverlayClass('veui-region-picker-group-shadow-overlay')"
                 :target="`node-${si}-${bi}-${gi}`"

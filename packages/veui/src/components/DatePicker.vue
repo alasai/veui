@@ -52,7 +52,6 @@
     <veui-icon :name="icons.clear"/>
   </button>
   <veui-overlay
-    v-if="expanded"
     target="button"
     :open="expanded"
     :options="realOverlayOptions"

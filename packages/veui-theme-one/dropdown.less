@@ -3,7 +3,18 @@
 ._veui-dropdown-overlay {
   border: 1px solid @veui-gray-color-6;
   margin: 3px 0;
+  transform-origin: 50% 0;
+  transition: transform @veui-transition-duration;
   .veui-overlay-shadow();
+
+  .tether-element-attached-bottom & {
+    transform-origin: 50% 100%;
+  }
+
+  .veui-overlay-enter &,
+  .veui-overlay-leave-to & {
+    transform: scaleY(0);
+  }
 
   &.veui-dropdown-overflow {
     &::before,
