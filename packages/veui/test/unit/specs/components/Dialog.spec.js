@@ -3,7 +3,11 @@ import Dialog from '@/components/Dialog'
 
 describe('components/Dialog', () => {
   it('should support `sync` modifier for prop `open`', done => {
+    const container = document.createElement('div')
+    document.body.appendChild(container)
+
     new Vue({
+      el: container,
       components: {
         'veui-dialog': Dialog
       },
@@ -42,11 +46,15 @@ describe('components/Dialog', () => {
         done()
       },
       template: '<veui-dialog ref="dialog" closable :open.sync="open"/>'
-    }).$mount()
+    })
   })
 
   it('should support async `beforeClose` function prop', done => {
+    const container = document.createElement('div')
+    document.body.appendChild(container)
+
     new Vue({
+      el: container,
       components: {
         'veui-dialog': Dialog
       },
@@ -86,7 +94,7 @@ describe('components/Dialog', () => {
         done()
       },
       template: '<veui-dialog ref="dialog" :open.sync="open" :before-close="confirm"/>'
-    }).$mount()
+    })
   })
 })
 

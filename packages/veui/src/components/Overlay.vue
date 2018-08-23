@@ -6,7 +6,6 @@
     class="veui-overlay"
     :class="realOverlayClass"
     :ui="ui"
-    ref="box"
     :style="{zIndex}"
     v-show="realOpen">
     <slot/>
